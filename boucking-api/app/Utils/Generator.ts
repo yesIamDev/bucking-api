@@ -20,7 +20,7 @@ export default class Generator {
      * @returns a promise that resolves to a string
      */
 
-    public static async id(): Promise<String> {
+    public static async id(): Promise<string> {
       return await uuidv4()
     }
 
