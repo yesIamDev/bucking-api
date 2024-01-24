@@ -17,27 +17,7 @@ export default class UserValidator extends GeneralCaseValidator {
     password: schema.string([rules.minLength(8), rules.confirmed()]),
   });
 
-  public v_otp = schema.create({
-    email: schema.string([
-      rules.email(),
-      rules.exists({
-        table: 'users',
-        column: 'email'
-      })
-    ])
-  })
-
-  public v_otp_verification = schema.create({
-    email: schema.string([
-      rules.email(),
-      rules.exists({
-        table:'users',
-        column: 'email'
-      })
-    ]),
-    otp: schema.number()
-  })
-
+ 
   public v_newPassword = schema.create({
     password: schema.string([
       rules.confirmed()
