@@ -1,8 +1,9 @@
-import { inject } from "@adonisjs/core/build/standalone";
+import { inject } from "@adonisjs/fold";
 import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import UserService from "App/Services/User.service";
 import UserValidator from "App/Validators/UserValidator";
 import Logger from "@ioc:Adonis/Core/Logger";
+import Hash from "@ioc:Adonis/Core/Hash";
 
 @inject()
 export default class UsersController extends UserValidator {
@@ -38,18 +39,105 @@ export default class UsersController extends UserValidator {
 
   public async create({}: HttpContextContract) {}
 
-  public async store({}: HttpContextContract) {}
+  /**
+   * A function that create a new user
+   * @param param0
+   */
+
+  public async store({ request, response }: HttpContextContract) {
+    const payload = await request.validate({
+      schema: this.v_create,
+    });
+    try {
+      const result = await this.user.register(payload);
+      response.created({ status: true, data: result });
+    } catch (error: any) {
+      Logger.error(error.message);
+      return response.expectationFailed({
+        status: false,
+        data: null,
+        message: error.message,
+      });
+    }
+  }
 
   /**
-   * It fetches the user's data from the database using the users id
+   * It fetches the user's data from the database using the user's id
+   * @param {HttpContextContract} -HttpContextContract- This is the context of the request.
+   * It contains the request, response, and auth object
    * @returns the user object
    */
 
-  public async show({}: HttpContextContract) {
-    
+  public async show({ response, auth }: HttpContextContract) {
+    try {
+      const user = auth.user;
+      if (user && user.id) {
+        const { id } = user;
+        const data = await this.user.find({ key: "id", value: id });
+        return response.ok({ status: true, data });
+      } else {
+        return response.expectationFailed({
+          status: false,
+          data: null,
+          message: "User Id not found",
+        });
+      }
+    } catch (error: any) {
+      Logger.error(error.message);
+      return response.expectationFailed({
+        status: false,
+        data: null,
+        message: error.message,
+      });
+    }
   }
 
-  public async edit({}: HttpContextContract) {}
+  public async login({ request, response, auth }: HttpContextContract) {
+    //1
+
+    const { email, password } = await request.validate({
+      schema: this.v_sign,
+    });
+
+    //2
+
+    try {
+      const userFind = await this.user.signin(email);
+      if (!userFind)
+        return response.unprocessableEntity({
+          errors: [
+            { rule: "-", field: "email", message: "Identifiants Incorect." },
+          ],
+        });
+
+      //3
+
+      if (!(await Hash.verify(userFind.password, password)))
+        return response.unprocessableEntity({
+          errors: [
+            {
+              rule: "-",
+              field: "password",
+              message: `Identifiants inccorect.`,
+            },
+          ],
+        });
+
+      //4
+      const token = await auth.use("api").generate(userFind);
+      return response.created({
+        status: true,
+        token,
+        data: { user: userFind },
+      });
+    } catch (error) {
+      Logger.error(error);
+      return response.expectationFailed({
+        status: false,
+        message: error.message,
+      });
+    }
+  }
 
   public async update({}: HttpContextContract) {}
 

@@ -12,6 +12,9 @@ export default class GeneralCaseValidator {
     id: schema.string([rules.uuid()]),
   })
 
+
+/* - A validation for the login route */
+
   public v_sign = schema.create({
     email: schema.string([rules.email()]),
     password: schema.string([rules.minLength(4), rules.confirmed()])
