@@ -139,7 +139,28 @@ export default class UsersController extends UserValidator {
     }
   }
 
-  public async update({}: HttpContextContract) {}
+/**
+ * It logs out the user
+ * @param param0 
+ * @returns The response object will be returned.
+ */
 
-  public async destroy({}: HttpContextContract) {}
+  public async logOut({response, auth}:HttpContextContract){
+    try{
+
+      auth.logout()
+      return response.ok({
+        status: true,
+        message: "User logOut"
+      })
+
+    }catch(error){
+      Logger.error(error);
+      return response.expectationFailed({
+        status: false,
+        message: error.message,
+      });
+    }
+  }
+
 }
